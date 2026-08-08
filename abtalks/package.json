@@ -1,0 +1,26 @@
+{
+  "name": "abtalks-ai-interviewer",
+  "version": "1.0.0",
+  "description": "ABTalks AI Interview Agent",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "inspect:curriculum": "node src/scripts/inspectCurriculum.js",
+    "process:curriculum": "node src/scripts/processCurriculum.js",
+    "test:embedding": "node src/scripts/testEmbedding.js",
+    "test:mongodb": "node src/scripts/testMongoDB.js",
+    "index:curriculum": "node src/scripts/indexCurriculum.js",
+    "test:retrieval": "node src/scripts/testRetrieval.js",
+    "test:gemini": "node src/scripts/testGemini.js",
+    "test:interview": "node src/scripts/testInterview.js",
+    "test:answer": "node src/scripts/testAnswerAnalysis.js",
+    "test:followup": "node src/scripts/testFollowUp.js",
+    "test:engine": "node src/scripts/testInterviewEngine.js",
+    "test:full-interview": "node src/scripts/testFullInterview.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.52.0",
+    "dotenv": "^16.0.0",
+    "mongodb": "^7.5.0"
+  }
+}

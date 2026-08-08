@@ -1,0 +1,584 @@
+[
+  {
+    "id": "day-1",
+    "day": 1,
+    "title": "VS Code & Python Environment Setup",
+    "objectives": [
+      "Install VS Code and Python on your machine",
+      "Configure the Python extension and Pylance",
+      "Create and activate a project virtual environment (.venv)",
+      "Run and debug your first Python program inside VS Code",
+      "Verify the development environment is ready for the remaining course"
+    ],
+    "tools": [
+      "VS Code",
+      "Python",
+      "Python Extension",
+      "Pylance",
+      "Virtual Environment"
+    ],
+    "text": "Day 1\n\nTitle: VS Code & Python Environment Setup\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nInstall VS Code and Python on your machine\nConfigure the Python extension and Pylance\nCreate and activate a project virtual environment (.venv)\nRun and debug your first Python program inside VS Code\nVerify the development environment is ready for the remaining course\n\nTools:\nVS Code, Python, Python Extension, Pylance, Virtual Environment"
+  },
+  {
+    "id": "day-2",
+    "day": 2,
+    "title": "Local LLM & AI Coding Assistant Setup",
+    "objectives": [
+      "Install Ollama and download a local coding model",
+      "Verify the local model works through the Ollama CLI",
+      "Connect VS Code to the local model using GitHub Copilot or Cline",
+      "Generate code using the local AI assistant",
+      "Confirm the complete AI coding workflow works offline"
+    ],
+    "tools": [
+      "Ollama",
+      "Qwen2.5-Coder",
+      "GitHub Copilot",
+      "Cline"
+    ],
+    "text": "Day 2\n\nTitle: Local LLM & AI Coding Assistant Setup\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nInstall Ollama and download a local coding model\nVerify the local model works through the Ollama CLI\nConnect VS Code to the local model using GitHub Copilot or Cline\nGenerate code using the local AI assistant\nConfirm the complete AI coding workflow works offline\n\nTools:\nOllama, Qwen2.5-Coder, GitHub Copilot, Cline"
+  },
+  {
+    "id": "day-3",
+    "day": 3,
+    "title": "First AI Project, React Frontend & GitHub",
+    "objectives": [
+      "Build a command-line chatbot powered by your local Ollama model",
+      "Scaffold a FastAPI backend with a health endpoint",
+      "Create a React application using Vite",
+      "Connect the React frontend with the FastAPI backend",
+      "Initialize Git, commit the project, and publish it to GitHub"
+    ],
+    "tools": [
+      "Python",
+      "Ollama",
+      "FastAPI",
+      "React",
+      "Vite",
+      "Git",
+      "GitHub"
+    ],
+    "text": "Day 3\n\nTitle: First AI Project, React Frontend & GitHub\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nBuild a command-line chatbot powered by your local Ollama model\nScaffold a FastAPI backend with a health endpoint\nCreate a React application using Vite\nConnect the React frontend with the FastAPI backend\nInitialize Git, commit the project, and publish it to GitHub\n\nTools:\nPython, Ollama, FastAPI, React, Vite, Git, GitHub"
+  },
+  {
+    "id": "day-4",
+    "day": 4,
+    "title": "Reading & Processing Structured Data",
+    "objectives": [
+      "Create synthetic healthcare plans and claims datasets",
+      "Load and clean structured CSV data using Pandas",
+      "Store the processed data in a SQLite database",
+      "Write SQL queries to answer common healthcare questions",
+      "Document reusable SQL queries for later chatbot integration"
+    ],
+    "tools": [
+      "Pandas",
+      "SQLite",
+      "SQL",
+      "SQLAlchemy"
+    ],
+    "text": "Day 4\n\nTitle: Reading & Processing Structured Data\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nCreate synthetic healthcare plans and claims datasets\nLoad and clean structured CSV data using Pandas\nStore the processed data in a SQLite database\nWrite SQL queries to answer common healthcare questions\nDocument reusable SQL queries for later chatbot integration\n\nTools:\nPandas, SQLite, SQL, SQLAlchemy"
+  },
+  {
+    "id": "day-5",
+    "day": 5,
+    "title": "Reading & Processing Unstructured Data",
+    "objectives": [
+      "Extract text from healthcare PDFs and Word documents",
+      "Perform OCR on scanned enrollment forms",
+      "Scrape useful content from a public healthcare webpage",
+      "Clean and normalize extracted text from multiple sources",
+      "Store the processed text files for knowledge-base creation"
+    ],
+    "tools": [
+      "pdfplumber",
+      "PyPDF",
+      "python-docx",
+      "Tesseract OCR",
+      "BeautifulSoup",
+      "Requests"
+    ],
+    "text": "Day 5\n\nTitle: Reading & Processing Unstructured Data\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nExtract text from healthcare PDFs and Word documents\nPerform OCR on scanned enrollment forms\nScrape useful content from a public healthcare webpage\nClean and normalize extracted text from multiple sources\nStore the processed text files for knowledge-base creation\n\nTools:\npdfplumber, PyPDF, python-docx, Tesseract OCR, BeautifulSoup, Requests"
+  },
+  {
+    "id": "day-6",
+    "day": 6,
+    "title": "Building the Knowledge Base",
+    "objectives": [
+      "Convert structured and unstructured healthcare data into a unified knowledge base",
+      "Split long documents into retrieval-friendly chunks",
+      "Attach metadata such as source, plan type, and document section to every chunk",
+      "Export all processed records into a knowledge_base.jsonl file",
+      "Validate chunk quality before using them for embeddings"
+    ],
+    "tools": [
+      "LangChain Text Splitters",
+      "JSONL",
+      "Python"
+    ],
+    "text": "Day 6\n\nTitle: Building the Knowledge Base\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nConvert structured and unstructured healthcare data into a unified knowledge base\nSplit long documents into retrieval-friendly chunks\nAttach metadata such as source, plan type, and document section to every chunk\nExport all processed records into a knowledge_base.jsonl file\nValidate chunk quality before using them for embeddings\n\nTools:\nLangChain Text Splitters, JSONL, Python"
+  },
+  {
+    "id": "day-7",
+    "day": 7,
+    "title": "Embeddings Explained",
+    "objectives": [
+      "Understand how text is converted into vector embeddings",
+      "Generate embeddings for every knowledge base chunk",
+      "Store embeddings alongside the original documents",
+      "Visualize embedding clusters using PCA",
+      "Analyze whether similar healthcare concepts cluster together"
+    ],
+    "tools": [
+      "Sentence Transformers",
+      "OpenAI Embeddings",
+      "Scikit-learn",
+      "Matplotlib"
+    ],
+    "text": "Day 7\n\nTitle: Embeddings Explained\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nUnderstand how text is converted into vector embeddings\nGenerate embeddings for every knowledge base chunk\nStore embeddings alongside the original documents\nVisualize embedding clusters using PCA\nAnalyze whether similar healthcare concepts cluster together\n\nTools:\nSentence Transformers, OpenAI Embeddings, Scikit-learn, Matplotlib"
+  },
+  {
+    "id": "day-8",
+    "day": 8,
+    "title": "Vector Databases Overview",
+    "objectives": [
+      "Learn the role of vector databases in RAG applications",
+      "Set up a local Chroma vector database",
+      "Create a cloud-based Pinecone index for comparison",
+      "Compare local and managed vector database solutions",
+      "Select the most suitable database for the chatbot project"
+    ],
+    "tools": [
+      "ChromaDB",
+      "Pinecone"
+    ],
+    "text": "Day 8\n\nTitle: Vector Databases Overview\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nLearn the role of vector databases in RAG applications\nSet up a local Chroma vector database\nCreate a cloud-based Pinecone index for comparison\nCompare local and managed vector database solutions\nSelect the most suitable database for the chatbot project\n\nTools:\nChromaDB, Pinecone"
+  },
+  {
+    "id": "day-9",
+    "day": 9,
+    "title": "Building & Populating the Vector Database",
+    "objectives": [
+      "Load knowledge base embeddings into the vector database",
+      "Store documents together with metadata for filtering",
+      "Verify that every knowledge base chunk has been indexed",
+      "Test semantic search with healthcare-related questions",
+      "Evaluate retrieval quality and metadata filtering"
+    ],
+    "tools": [
+      "ChromaDB",
+      "Sentence Transformers"
+    ],
+    "text": "Day 9\n\nTitle: Building & Populating the Vector Database\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nLoad knowledge base embeddings into the vector database\nStore documents together with metadata for filtering\nVerify that every knowledge base chunk has been indexed\nTest semantic search with healthcare-related questions\nEvaluate retrieval quality and metadata filtering\n\nTools:\nChromaDB, Sentence Transformers"
+  },
+  {
+    "id": "day-10",
+    "day": 10,
+    "title": "The Retrieval & Matching Engine",
+    "objectives": [
+      "Build a query router that decides between SQL, vector search, or hybrid retrieval",
+      "Implement structured data lookup for plans and claims",
+      "Implement semantic retrieval from the vector database",
+      "Merge and deduplicate results from multiple retrieval sources",
+      "Evaluate retrieval accuracy using a diverse set of healthcare questions"
+    ],
+    "tools": [
+      "SQLite",
+      "ChromaDB",
+      "Python"
+    ],
+    "text": "Day 10\n\nTitle: The Retrieval & Matching Engine\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nBuild a query router that decides between SQL, vector search, or hybrid retrieval\nImplement structured data lookup for plans and claims\nImplement semantic retrieval from the vector database\nMerge and deduplicate results from multiple retrieval sources\nEvaluate retrieval accuracy using a diverse set of healthcare questions\n\nTools:\nSQLite, ChromaDB, Python"
+  },
+  {
+    "id": "day-11",
+    "day": 11,
+    "title": "RAG End-to-End & LLM API Basics",
+    "objectives": [
+      "Connect the retrieval engine to an LLM to build a complete RAG pipeline",
+      "Configure a local or hosted LLM provider using the OpenAI-compatible SDK",
+      "Create a grounded prompt that answers only from retrieved context",
+      "Generate answers using retrieved knowledge",
+      "Evaluate chatbot responses against the retrieval-only baseline"
+    ],
+    "tools": [
+      "OpenAI SDK",
+      "Ollama",
+      "Groq",
+      "Python"
+    ],
+    "text": "Day 11\n\nTitle: RAG End-to-End & LLM API Basics\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nConnect the retrieval engine to an LLM to build a complete RAG pipeline\nConfigure a local or hosted LLM provider using the OpenAI-compatible SDK\nCreate a grounded prompt that answers only from retrieved context\nGenerate answers using retrieved knowledge\nEvaluate chatbot responses against the retrieval-only baseline\n\nTools:\nOpenAI SDK, Ollama, Groq, Python"
+  },
+  {
+    "id": "day-12",
+    "day": 12,
+    "title": "Prompt Engineering Fundamentals",
+    "objectives": [
+      "Understand zero-shot, few-shot, and chain-of-thought prompting",
+      "Design multiple system prompt variations for the chatbot",
+      "Compare prompts based on accuracy, compliance, and tone",
+      "Evaluate prompt performance using a fixed question set",
+      "Finalize the production-ready system prompt"
+    ],
+    "tools": [
+      "LLMs",
+      "Prompt Templates"
+    ],
+    "text": "Day 12\n\nTitle: Prompt Engineering Fundamentals\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nUnderstand zero-shot, few-shot, and chain-of-thought prompting\nDesign multiple system prompt variations for the chatbot\nCompare prompts based on accuracy, compliance, and tone\nEvaluate prompt performance using a fixed question set\nFinalize the production-ready system prompt\n\nTools:\nLLMs, Prompt Templates"
+  },
+  {
+    "id": "day-13",
+    "day": 13,
+    "title": "Advanced Prompting: Function Calling & Structured Outputs",
+    "objectives": [
+      "Define tool schemas for healthcare-related chatbot functions",
+      "Implement LLM function calling with automatic tool execution",
+      "Validate structured outputs using Pydantic models",
+      "Log tool calls for debugging and auditing",
+      "Test different user queries to verify correct tool selection"
+    ],
+    "tools": [
+      "OpenAI Function Calling",
+      "Pydantic",
+      "Python"
+    ],
+    "text": "Day 13\n\nTitle: Advanced Prompting: Function Calling & Structured Outputs\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nDefine tool schemas for healthcare-related chatbot functions\nImplement LLM function calling with automatic tool execution\nValidate structured outputs using Pydantic models\nLog tool calls for debugging and auditing\nTest different user queries to verify correct tool selection\n\nTools:\nOpenAI Function Calling, Pydantic, Python"
+  },
+  {
+    "id": "day-14",
+    "day": 14,
+    "title": "Fine-Tuning: Concepts & When to Use It",
+    "objectives": [
+      "Understand when fine-tuning is more appropriate than prompting or RAG",
+      "Identify chatbot issues that fine-tuning can solve",
+      "Create a high-quality fine-tuning dataset",
+      "Validate and organize the dataset into training and test sets",
+      "Prepare the project for model fine-tuning"
+    ],
+    "tools": [
+      "JSONL",
+      "OpenAI",
+      "LoRA",
+      "QLoRA"
+    ],
+    "text": "Day 14\n\nTitle: Fine-Tuning: Concepts & When to Use It\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nUnderstand when fine-tuning is more appropriate than prompting or RAG\nIdentify chatbot issues that fine-tuning can solve\nCreate a high-quality fine-tuning dataset\nValidate and organize the dataset into training and test sets\nPrepare the project for model fine-tuning\n\nTools:\nJSONL, OpenAI, LoRA, QLoRA"
+  },
+  {
+    "id": "day-15",
+    "day": 15,
+    "title": "Fine-Tuning: Hands-On with LoRA & QLoRA",
+    "objectives": [
+      "Train or fine-tune an LLM using LoRA or the OpenAI fine-tuning workflow",
+      "Load and evaluate the fine-tuned model",
+      "Compare the base model and fine-tuned model on unseen test cases",
+      "Measure improvements in tone, consistency, and response quality",
+      "Document whether fine-tuning provides measurable benefits for the chatbot"
+    ],
+    "tools": [
+      "PEFT",
+      "Transformers",
+      "BitsAndBytes",
+      "OpenAI Fine-Tuning",
+      "LoRA"
+    ],
+    "text": "Day 15\n\nTitle: Fine-Tuning: Hands-On with LoRA & QLoRA\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nTrain or fine-tune an LLM using LoRA or the OpenAI fine-tuning workflow\nLoad and evaluate the fine-tuned model\nCompare the base model and fine-tuned model on unseen test cases\nMeasure improvements in tone, consistency, and response quality\nDocument whether fine-tuning provides measurable benefits for the chatbot\n\nTools:\nPEFT, Transformers, BitsAndBytes, OpenAI Fine-Tuning, LoRA"
+  },
+  {
+    "id": "day-16",
+    "day": 16,
+    "title": "Chatbot Backend & API Integration",
+    "objectives": [
+      "Create a /chat API endpoint for the healthcare chatbot",
+      "Integrate retrieval, function calling, and LLM response generation",
+      "Implement session-based conversation management",
+      "Build a conversation history endpoint",
+      "Test the complete backend API using Postman or cURL"
+    ],
+    "tools": [
+      "FastAPI",
+      "SQLite",
+      "Python"
+    ],
+    "text": "Day 16\n\nTitle: Chatbot Backend & API Integration\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nCreate a /chat API endpoint for the healthcare chatbot\nIntegrate retrieval, function calling, and LLM response generation\nImplement session-based conversation management\nBuild a conversation history endpoint\nTest the complete backend API using Postman or cURL\n\nTools:\nFastAPI, SQLite, Python"
+  },
+  {
+    "id": "day-17",
+    "day": 17,
+    "title": "Chatbot Frontend Development",
+    "objectives": [
+      "Build an interactive chat interface for the chatbot",
+      "Connect the frontend to the backend chat API",
+      "Maintain conversation history across user interactions",
+      "Add a healthcare plan selector and new conversation option",
+      "Validate end-to-end communication between frontend and backend"
+    ],
+    "tools": [
+      "Streamlit",
+      "Requests",
+      "UUID"
+    ],
+    "text": "Day 17\n\nTitle: Chatbot Frontend Development\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nBuild an interactive chat interface for the chatbot\nConnect the frontend to the backend chat API\nMaintain conversation history across user interactions\nAdd a healthcare plan selector and new conversation option\nValidate end-to-end communication between frontend and backend\n\nTools:\nStreamlit, Requests, UUID"
+  },
+  {
+    "id": "day-18",
+    "day": 18,
+    "title": "Full-Stack Integration & Streaming Responses",
+    "objectives": [
+      "Implement real-time streaming responses from the LLM",
+      "Display generated tokens incrementally in the chat interface",
+      "Add loading indicators for a better user experience",
+      "Handle interrupted or failed streaming requests gracefully",
+      "Verify smooth end-to-end streaming between backend and frontend"
+    ],
+    "tools": [
+      "FastAPI",
+      "StreamingResponse",
+      "Server-Sent Events",
+      "Streamlit"
+    ],
+    "text": "Day 18\n\nTitle: Full-Stack Integration & Streaming Responses\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nImplement real-time streaming responses from the LLM\nDisplay generated tokens incrementally in the chat interface\nAdd loading indicators for a better user experience\nHandle interrupted or failed streaming requests gracefully\nVerify smooth end-to-end streaming between backend and frontend\n\nTools:\nFastAPI, StreamingResponse, Server-Sent Events, Streamlit"
+  },
+  {
+    "id": "day-19",
+    "day": 19,
+    "title": "Response Formatting & Rich Outputs",
+    "objectives": [
+      "Add citations to chatbot responses using retrieved knowledge",
+      "Create structured cards for claims and coverage summaries",
+      "Render Markdown content with tables, lists, and formatting",
+      "Validate structured outputs before displaying them",
+      "Improve chatbot readability and response trustworthiness"
+    ],
+    "tools": [
+      "Pydantic",
+      "Markdown",
+      "Streamlit"
+    ],
+    "text": "Day 19\n\nTitle: Response Formatting & Rich Outputs\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nAdd citations to chatbot responses using retrieved knowledge\nCreate structured cards for claims and coverage summaries\nRender Markdown content with tables, lists, and formatting\nValidate structured outputs before displaying them\nImprove chatbot readability and response trustworthiness\n\nTools:\nPydantic, Markdown, Streamlit"
+  },
+  {
+    "id": "day-20",
+    "day": 20,
+    "title": "Conversation Memory & Context Management",
+    "objectives": [
+      "Persist conversation history across multiple user sessions",
+      "Build context-aware conversations using previous messages",
+      "Implement automatic conversation summarization for long chats",
+      "Manage token limits while preserving important context",
+      "Ensure the chatbot remembers user preferences throughout a conversation"
+    ],
+    "tools": [
+      "SQLite",
+      "FastAPI",
+      "LLM",
+      "Token Management"
+    ],
+    "text": "Day 20\n\nTitle: Conversation Memory & Context Management\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nPersist conversation history across multiple user sessions\nBuild context-aware conversations using previous messages\nImplement automatic conversation summarization for long chats\nManage token limits while preserving important context\nEnsure the chatbot remembers user preferences throughout a conversation\n\nTools:\nSQLite, FastAPI, LLM, Token Management"
+  },
+  {
+    "id": "day-21",
+    "day": 21,
+    "title": "Agentic Frameworks: LangChain Agents & Tool Use",
+    "objectives": [
+      "Convert function-calling workflows into a reasoning agent",
+      "Wrap chatbot capabilities as reusable LangChain tools",
+      "Build a ReAct agent capable of selecting the correct tool automatically",
+      "Analyze reasoning traces to understand agent decision making",
+      "Evaluate whether the agent chooses the right tools for healthcare queries"
+    ],
+    "tools": [
+      "LangChain",
+      "LangChain Agents",
+      "ReAct",
+      "Python"
+    ],
+    "text": "Day 21\n\nTitle: Agentic Frameworks: LangChain Agents & Tool Use\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nConvert function-calling workflows into a reasoning agent\nWrap chatbot capabilities as reusable LangChain tools\nBuild a ReAct agent capable of selecting the correct tool automatically\nAnalyze reasoning traces to understand agent decision making\nEvaluate whether the agent chooses the right tools for healthcare queries\n\nTools:\nLangChain, LangChain Agents, ReAct, Python"
+  },
+  {
+    "id": "day-22",
+    "day": 22,
+    "title": "Multi-Agent Orchestration",
+    "objectives": [
+      "Create specialized agents for different healthcare domains",
+      "Build a router agent that delegates requests to the correct specialist",
+      "Implement a complete multi-agent workflow",
+      "Compare multi-agent performance with a single-agent architecture",
+      "Identify scenarios where multiple agents provide measurable benefits"
+    ],
+    "tools": [
+      "CrewAI",
+      "LangGraph",
+      "Python"
+    ],
+    "text": "Day 22\n\nTitle: Multi-Agent Orchestration\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nCreate specialized agents for different healthcare domains\nBuild a router agent that delegates requests to the correct specialist\nImplement a complete multi-agent workflow\nCompare multi-agent performance with a single-agent architecture\nIdentify scenarios where multiple agents provide measurable benefits\n\nTools:\nCrewAI, LangGraph, Python"
+  },
+  {
+    "id": "day-23",
+    "day": 23,
+    "title": "Model Context Protocol (MCP)",
+    "objectives": [
+      "Understand the purpose of the Model Context Protocol",
+      "Build an MCP server exposing healthcare chatbot tools",
+      "Connect the MCP server to an MCP-compatible client",
+      "Expose multiple chatbot capabilities through standardized MCP tools",
+      "Verify successful tool execution through live MCP interactions"
+    ],
+    "tools": [
+      "MCP Python SDK",
+      "Claude Desktop",
+      "Cline",
+      "Python"
+    ],
+    "text": "Day 23\n\nTitle: Model Context Protocol (MCP)\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nUnderstand the purpose of the Model Context Protocol\nBuild an MCP server exposing healthcare chatbot tools\nConnect the MCP server to an MCP-compatible client\nExpose multiple chatbot capabilities through standardized MCP tools\nVerify successful tool execution through live MCP interactions\n\nTools:\nMCP Python SDK, Claude Desktop, Cline, Python"
+  },
+  {
+    "id": "day-24",
+    "day": 24,
+    "title": "Agentic Chatbot Integration",
+    "objectives": [
+      "Integrate agents, MCP tools, retrieval, and conversation memory",
+      "Replace mock tools with live MCP-powered tool calls",
+      "Implement retries, timeouts, and graceful error handling",
+      "Perform failure testing to validate chatbot reliability",
+      "Build a production-style agentic chatbot pipeline"
+    ],
+    "tools": [
+      "LangChain",
+      "MCP",
+      "FastAPI",
+      "Python"
+    ],
+    "text": "Day 24\n\nTitle: Agentic Chatbot Integration\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nIntegrate agents, MCP tools, retrieval, and conversation memory\nReplace mock tools with live MCP-powered tool calls\nImplement retries, timeouts, and graceful error handling\nPerform failure testing to validate chatbot reliability\nBuild a production-style agentic chatbot pipeline\n\nTools:\nLangChain, MCP, FastAPI, Python"
+  },
+  {
+    "id": "day-25",
+    "day": 25,
+    "title": "Chatbot Evaluation & Testing",
+    "objectives": [
+      "Create a benchmark dataset covering representative healthcare questions",
+      "Evaluate chatbot responses for accuracy, grounding, and consistency",
+      "Measure retrieval quality and end-to-end response performance",
+      "Identify common failure cases and document improvement areas",
+      "Establish baseline metrics before production deployment"
+    ],
+    "tools": [
+      "Python",
+      "Evaluation Dataset",
+      "Automated Testing"
+    ],
+    "text": "Day 25\n\nTitle: Chatbot Evaluation & Testing\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nCreate a benchmark dataset covering representative healthcare questions\nEvaluate chatbot responses for accuracy, grounding, and consistency\nMeasure retrieval quality and end-to-end response performance\nIdentify common failure cases and document improvement areas\nEstablish baseline metrics before production deployment\n\nTools:\nPython, Evaluation Dataset, Automated Testing"
+  },
+  {
+    "id": "day-26",
+    "day": 26,
+    "title": "Performance Optimization & Cost Management",
+    "objectives": [
+      "Measure token usage across the chatbot pipeline",
+      "Optimize retrieval and prompt size to reduce latency and cost",
+      "Implement response caching for repeated queries",
+      "Benchmark response time before and after optimization",
+      "Document performance improvements using measurable metrics"
+    ],
+    "tools": [
+      "tiktoken",
+      "Python",
+      "FastAPI"
+    ],
+    "text": "Day 26\n\nTitle: Performance Optimization & Cost Management\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nMeasure token usage across the chatbot pipeline\nOptimize retrieval and prompt size to reduce latency and cost\nImplement response caching for repeated queries\nBenchmark response time before and after optimization\nDocument performance improvements using measurable metrics\n\nTools:\ntiktoken, Python, FastAPI"
+  },
+  {
+    "id": "day-27",
+    "day": 27,
+    "title": "Security, Privacy & Guardrails",
+    "objectives": [
+      "Secure chatbot APIs against unauthorized access",
+      "Validate and sanitize user inputs before processing",
+      "Protect sensitive healthcare information throughout the pipeline",
+      "Implement prompt-injection and jailbreak safeguards",
+      "Test common security scenarios and document mitigation strategies"
+    ],
+    "tools": [
+      "FastAPI",
+      "Python",
+      "Authentication",
+      "Input Validation"
+    ],
+    "text": "Day 27\n\nTitle: Security, Privacy & Guardrails\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nSecure chatbot APIs against unauthorized access\nValidate and sanitize user inputs before processing\nProtect sensitive healthcare information throughout the pipeline\nImplement prompt-injection and jailbreak safeguards\nTest common security scenarios and document mitigation strategies\n\nTools:\nFastAPI, Python, Authentication, Input Validation"
+  },
+  {
+    "id": "day-28",
+    "day": 28,
+    "title": "Docker & Kubernetes Deployment",
+    "objectives": [
+      "Containerize the chatbot backend and frontend using Docker",
+      "Deploy the application to a Kubernetes cluster",
+      "Configure health checks and environment variables",
+      "Verify the deployed chatbot functions correctly",
+      "Prepare the application for production hosting"
+    ],
+    "tools": [
+      "Docker",
+      "Kubernetes",
+      "FastAPI",
+      "React"
+    ],
+    "text": "Day 28\n\nTitle: Docker & Kubernetes Deployment\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nContainerize the chatbot backend and frontend using Docker\nDeploy the application to a Kubernetes cluster\nConfigure health checks and environment variables\nVerify the deployed chatbot functions correctly\nPrepare the application for production hosting\n\nTools:\nDocker, Kubernetes, FastAPI, React"
+  },
+  {
+    "id": "day-29",
+    "day": 29,
+    "title": "Monitoring, Logging & Observability",
+    "objectives": [
+      "Add structured logging throughout the chatbot pipeline",
+      "Monitor API performance and chatbot usage",
+      "Track failures, latency, and tool execution metrics",
+      "Build dashboards for production observability",
+      "Use monitoring insights to improve chatbot reliability"
+    ],
+    "tools": [
+      "Python Logging",
+      "Prometheus",
+      "Grafana"
+    ],
+    "text": "Day 29\n\nTitle: Monitoring, Logging & Observability\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nAdd structured logging throughout the chatbot pipeline\nMonitor API performance and chatbot usage\nTrack failures, latency, and tool execution metrics\nBuild dashboards for production observability\nUse monitoring insights to improve chatbot reliability\n\nTools:\nPython Logging, Prometheus, Grafana"
+  },
+  {
+    "id": "day-30",
+    "day": 30,
+    "title": "Production Readiness & Final Testing",
+    "objectives": [
+      "Perform complete end-to-end testing of the chatbot",
+      "Validate retrieval, agent workflows, and frontend integration",
+      "Fix production issues discovered during testing",
+      "Complete deployment and operational documentation",
+      "Prepare the chatbot for real-world production usage"
+    ],
+    "tools": [
+      "FastAPI",
+      "Docker",
+      "Kubernetes",
+      "Python"
+    ],
+    "text": "Day 30\n\nTitle: Production Readiness & Final Testing\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nPerform complete end-to-end testing of the chatbot\nValidate retrieval, agent workflows, and frontend integration\nFix production issues discovered during testing\nComplete deployment and operational documentation\nPrepare the chatbot for real-world production usage\n\nTools:\nFastAPI, Docker, Kubernetes, Python"
+  },
+  {
+    "id": "day-31",
+    "day": 31,
+    "title": "Capstone Project & Final Demo",
+    "objectives": [
+      "Demonstrate the complete enterprise healthcare chatbot",
+      "Showcase retrieval, RAG, agents, MCP, and conversation memory",
+      "Present the deployed application with production architecture",
+      "Evaluate the chatbot using real-world scenarios",
+      "Publish the final project with source code and documentation"
+    ],
+    "tools": [
+      "FastAPI",
+      "React",
+      "LangChain",
+      "MCP",
+      "Docker",
+      "Kubernetes"
+    ],
+    "text": "Day 31\n\nTitle: Capstone Project & Final Demo\n\nModule: undefined\n\nTopic:\nundefined\n\nLearning Objectives:\nDemonstrate the complete enterprise healthcare chatbot\nShowcase retrieval, RAG, agents, MCP, and conversation memory\nPresent the deployed application with production architecture\nEvaluate the chatbot using real-world scenarios\nPublish the final project with source code and documentation\n\nTools:\nFastAPI, React, LangChain, MCP, Docker, Kubernetes"
+  }
+]
