@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import { handleInitialTurn } from '../controllers/interview.controller.js';
+import { handleInitialTurn, handleAnswerTurn } from '../controllers/interview.controller.js'; // Adjust path if needed
 
 const router = Router();
 
-router.post('/', handleInitialTurn);
-router.post('/chat', handleInitialTurn);
+// POST http://localhost:5000/api/interview/start
+router.post('/start', handleInitialTurn);
+
+// POST http://localhost:5000/api/interview/answer
+router.post('/answer', handleAnswerTurn);
 
 export default router;

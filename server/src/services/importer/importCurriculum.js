@@ -10,7 +10,7 @@ export const importCurriculum = async (filePath) => {
     await Curriculum.findOneAndUpdate(
       { cohort: curriculumData.cohort },
       curriculumData,
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     logger.info({ cohort: curriculumData.cohort }, 'Successfully imported curriculum into MongoDB');

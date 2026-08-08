@@ -23,4 +23,11 @@ app.use('/api/curriculum', curriculumRoutes);
 // Error Middleware
 app.use(errorHandler);
 
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Cannot ${req.method} ${req.originalUrl}`
+  });
+});
+
 export default app;

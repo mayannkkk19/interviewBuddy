@@ -1,7 +1,7 @@
 import {
   startInterview,
   processAnswer
-} from "../services/ai/interviewEngine.service.js";
+} from "../src/services/interview/interviewEngine.service.js";
 
 
 async function testFullInterview() {

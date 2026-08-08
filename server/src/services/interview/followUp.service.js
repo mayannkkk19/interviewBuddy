@@ -1,4 +1,4 @@
-import { generateText } from "./gemini.service.js";
+import { generateText } from "../ai/gemini.service.js";
 
 export async function generateFollowUpQuestion({
   question,
