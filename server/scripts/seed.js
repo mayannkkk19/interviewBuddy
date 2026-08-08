@@ -1,7 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import mongoose from 'mongoose';
-import { connectDB } from '../src/config/db.js';
+import { connectDB, closeDB } from '../src/config/db.js';
 import { importCandidates } from '../src/services/importer/importCandidates.js';
 import { importCurriculum } from '../src/services/importer/importCurriculum.js';
 import { logger } from '../src/utils/logger.js';
@@ -10,22 +9,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const seed = async () => {
-  await connectDB();
+  try {
+    await connectDB();
 
-  // Resolves json files from root directory
-  const candidatesPath = path.resolve(__dirname, '../../candidates.json');
-  const curriculumPath = path.resolve(__dirname, '../../curriculum.json');
+    const candidatesPath = path.resolve(__dirname, '../candidates.json');
+    const curriculumPath = path.resolve(__dirname, '../data/curriculum.json');
 
-  logger.info('Starting database seeding...');
-  await importCandidates(candidatesPath);
-  await importCurriculum(curriculumPath);
+    logger.info('Starting database seeding...');
 
-  logger.info('Database seeding completed successfully!');
-  await mongoose.disconnect();
-  process.exit(0);
+    await importCandidates(candidatesPath);
+    await importCurriculum(curriculumPath);
+
+    logger.info('Database seeding completed successfully!');
+  } catch (err) {
+    logger.error({ err: err.message }, 'Seeding script failed');
+    process.exitCode = 1;
+  } finally {
+    // Single point of disconnection handling
+    await closeDB();
+  }
 };
 
-seed().catch((err) => {
-  logger.error({ err: err.message }, 'Seeding script failed');
-  process.exit(1);
-});
+seed();
