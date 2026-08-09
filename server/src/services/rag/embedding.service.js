@@ -38,7 +38,8 @@ const callWithRetry = async (fn, retries = 5, delayMs = 4000) => {
  * @returns {Promise<number[]>} Vector array.
  */
 export async function generateEmbedding(text) {
-  if (AI_MODE === 'mock' && !API_KEY) {
+  // Instantly return mock vector array when AI_MODE is mock, bypassing all network/key checks
+  if (AI_MODE === 'mock') {
     return new Array(768).fill(0.01);
   }
 
@@ -52,7 +53,7 @@ export async function generateEmbedding(text) {
     const response = await openai.embeddings.create({
       model: modelName,
       input: text,
-      dimensions: 768, // Forces OpenAI to output 768 dimensions to match your MongoDB database index
+      dimensions: 768,
     });
 
     const values = response?.data?.[0]?.embedding;

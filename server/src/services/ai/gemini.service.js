@@ -159,6 +159,7 @@ export async function generateText(prompt, options = {}) {
 }
 
 export async function getEmbedding(text) {
+  // Force short-circuit in mock mode so it never hits the OpenAI API network
   if (AI_MODE === "mock") {
     return new Array(768).fill(0.1);
   }
