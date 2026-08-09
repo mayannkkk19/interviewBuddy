@@ -1,7 +1,9 @@
-import { retrieveCurriculum } from "../rag/retriever.js";
+import { retrieveCurriculumByDays } from "../rag/retriever.js";
 import { generateText } from "../ai/gemini.service.js";
 import { analyzeCandidateAnswer } from "../ai/evaluator.js";
 import { generateFollowUpQuestion } from "./followUp.service.js";
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function startInterview(candidateProfile) {
   const state = {
@@ -20,10 +22,6 @@ export async function startInterview(candidateProfile) {
 
   state.currentQuestion = questionData.question;
   state.questionsAsked = 1;
-
-  if (!state.daysCovered.includes(questionData.day)) {
-    state.daysCovered.push(questionData.day);
-  }
 
   state.conversationHistory.push({
     role: "interviewer",
@@ -45,6 +43,7 @@ export async function processAnswer(state, answer) {
     content: answer,
   });
 
+  // 1. Analyze Candidate Answer
   const evaluation = await analyzeCandidateAnswer({
     question,
     answer,
@@ -53,13 +52,13 @@ export async function processAnswer(state, answer) {
 
   state.evaluations.push(evaluation);
 
-  if (evaluation.strengths) {
+  if (Array.isArray(evaluation.strengths)) {
     state.topicsCovered.push(...evaluation.strengths);
   }
 
+  // 2. Check Assessment Termination Rule (8 Turns)
   if (state.questionsAsked >= 8) {
     state.isComplete = true;
-
     return {
       isComplete: true,
       evaluation,
@@ -67,11 +66,17 @@ export async function processAnswer(state, answer) {
     };
   }
 
+  // 3. Pause 2 seconds to respect API rate limits
+  await delay(2000);
+
+  // 4. Generate Next Question & Advance State
   let nextQuestion;
+  let nextDay;
 
   if (state.daysCovered.length < 4) {
     const nextQuestionData = await generateNextQuestion(state);
     nextQuestion = nextQuestionData.question;
+    nextDay = nextQuestionData.day;
   } else if (evaluation.shouldAskFollowUp) {
     nextQuestion = await generateFollowUpQuestion({
       question,
@@ -79,9 +84,12 @@ export async function processAnswer(state, answer) {
       evaluation,
       curriculumContext: state.currentCurriculum,
     });
+    // Maintain current day for follow-up turns
+    nextDay = state.daysCovered[state.daysCovered.length - 1] || 1;
   } else {
     const nextQuestionData = await generateNextQuestion(state);
     nextQuestion = nextQuestionData.question;
+    nextDay = nextQuestionData.day;
   }
 
   state.currentQuestion = nextQuestion;
@@ -95,13 +103,14 @@ export async function processAnswer(state, answer) {
   return {
     isComplete: false,
     question: nextQuestion,
+    day: nextDay,
     evaluation,
     state,
   };
 }
 
 async function generateNextQuestion(state) {
-  const candidateProfile = state.candidateProfile;
+  const candidateProfile = state.candidateProfile || {};
 
   const completedDays = Array.isArray(candidateProfile.completedDays)
     ? candidateProfile.completedDays.map(Number)
@@ -111,58 +120,23 @@ async function generateNextQuestion(state) {
     ? candidateProfile.skippedDays.map(Number)
     : [];
 
-  const searchQuery = `Find curriculum topics suitable for technical interview question.`;
+  // Filter for days that have not been asked yet
+  const remainingDays = completedDays.filter(
+    (day) => !skippedDays.includes(day) && !state.daysCovered.includes(day)
+  );
 
-  let curriculumContext = await retrieveCurriculum(searchQuery, 8);
+  let curriculumContext = [];
 
-  if (!Array.isArray(curriculumContext)) {
-    curriculumContext = [];
+  if (remainingDays.length > 0) {
+    const targetDays = remainingDays.slice(0, 4);
+    curriculumContext = await retrieveCurriculumByDays(targetDays);
+  } else {
+    // If all target days were covered once, reuse active pool without skipped days
+    const validDays = completedDays.filter((day) => !skippedDays.includes(day));
+    curriculumContext = await retrieveCurriculumByDays(validDays.slice(0, 4));
   }
 
-  // 1. Sanitize retrieved items against profile completion
-  curriculumContext = curriculumContext.filter((item) => {
-    const day = Number(item.day);
-    return (
-      Number.isInteger(day) &&
-      completedDays.includes(day) &&
-      !skippedDays.includes(day)
-    );
-  });
-
-  // 2. Safely extract uncovered items without destroying full context if none exist
-  if (state.daysCovered.length < 4) {
-    const uncovered = curriculumContext.filter(
-      (item) => !state.daysCovered.includes(Number(item.day))
-    );
-
-    if (uncovered.length > 0) {
-      curriculumContext = uncovered;
-    } else {
-      // Clear context to explicitly trigger fallback retrieval below
-      curriculumContext = [];
-    }
-  }
-
-  // 3. Fallback: Directly pull remaining unvisited completed days if vector search exhausted available pool
-  if (state.daysCovered.length < 4 && curriculumContext.length === 0) {
-    const availableCompletedDays = completedDays.filter(
-      (day) => !skippedDays.includes(day) && !state.daysCovered.includes(day)
-    );
-
-    for (const day of availableCompletedDays) {
-      try {
-        const retrieved = await retrieveCurriculum(`curriculum day ${day}`, 1);
-        if (Array.isArray(retrieved) && retrieved.length > 0) {
-          curriculumContext.push({ ...retrieved[0], day: Number(day) });
-        }
-      } catch (err) {
-        console.warn(`[Interview Engine] Error fetching day ${day}:`, err.message);
-      }
-      if (curriculumContext.length >= 4) break;
-    }
-  }
-
-  // 4. Deduplicate items by day
+  // Deduplicate retrieved items by day number
   const uniqueMap = new Map();
   for (const item of curriculumContext) {
     const d = Number(item.day);
@@ -174,41 +148,53 @@ async function generateNextQuestion(state) {
 
   const availableDays = curriculumContext.map((item) => Number(item.day));
 
-  const prompt = `
-Curriculum days already covered:
-${JSON.stringify(state.daysCovered)}
+  const curriculumSummary = curriculumContext
+    .map((c) => `Day ${c.day}: ${c.title || c.topic || "General Topics"} - ${c.text || ""}`)
+    .join("\n");
 
-AVAILABLE CURRICULUM DAYS FOR THIS QUESTION:
-${JSON.stringify(availableDays)}
+  const prompt = `You are a technical interviewer. Generate ONE targeted interview question based on the provided curriculum material.
 
-Return ONLY valid JSON format:
+Curriculum Context:
+${curriculumSummary}
+
+Days already covered: ${JSON.stringify(state.daysCovered)}
+Available Days for selection: ${JSON.stringify(availableDays)}
+
+Return strictly valid JSON only:
 {
-  "question": "Your interview question here",
-  "day": ${availableDays[0] || 11}
-}
-`;
+  "question": "Your technical interview question here",
+  "day": ${availableDays[0] || 1}
+}`;
 
   const response = await generateText(prompt);
-  const cleaned = response.replace(/```json/gi, "").replace(/```/g, "").trim();
-  const questionData = JSON.parse(cleaned);
+
+  let questionData;
+  try {
+    const cleaned = response.replace(/```json/gi, "").replace(/```/g, "").trim();
+    questionData = JSON.parse(cleaned);
+  } catch (err) {
+    console.warn("[Interview Engine] Fallback used due to JSON parse error.");
+    questionData = {
+      question: "Can you walk through how you would architect a production-ready application using these modules?",
+      day: availableDays[0] || 1,
+    };
+  }
 
   let finalSelectedDay = Number(questionData.day);
 
-  // 5. Force progression to an uncovered day if mock or LLM returned an already covered day
-  if (state.daysCovered.length < 4) {
-    const uncoveredDay = availableDays.find((day) => !state.daysCovered.includes(day));
-    if (uncoveredDay !== undefined && state.daysCovered.includes(finalSelectedDay)) {
-      finalSelectedDay = uncoveredDay;
-    }
+  // Guarantee selection of an uncovered day if available
+  const uncoveredDay = availableDays.find((day) => !state.daysCovered.includes(day));
+  if (uncoveredDay !== undefined && (isNaN(finalSelectedDay) || state.daysCovered.includes(finalSelectedDay))) {
+    finalSelectedDay = uncoveredDay;
   }
 
-  // Commit selected day
+  // Record day coverage in state array
   if (!state.daysCovered.includes(finalSelectedDay)) {
     state.daysCovered.push(finalSelectedDay);
   }
 
   return {
-    question: questionData.question.trim(),
+    question: String(questionData.question).trim(),
     day: finalSelectedDay,
   };
 }

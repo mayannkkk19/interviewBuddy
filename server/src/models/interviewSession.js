@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const messageSchema = new mongoose.Schema({
   role: { type: String, enum: ['user', 'assistant', 'system'], required: true },
   content: { type: String, required: true },
+  day: { type: Number }, // <-- 1. ADDED THIS
   timestamp: { type: Date, default: Date.now },
   evaluation: {
     score: Number,
@@ -27,8 +28,6 @@ const interviewSessionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Add these helpers to the bottom of interviewSession.js
-
 export async function createSessionInDB(sessionId, candidateProfile, initialQuestion, day) {
   return await InterviewSession.create({
     sessionId,
@@ -40,6 +39,7 @@ export async function createSessionInDB(sessionId, candidateProfile, initialQues
       {
         role: 'assistant',
         content: initialQuestion,
+        day: day, // <-- 2. SAVE INITIAL DAY
         timestamp: new Date(),
       },
     ],
@@ -54,6 +54,7 @@ export async function updateSessionInDB(sessionId, userAnswer, nextQuestion, nex
   session.history.push({
     role: 'user',
     content: userAnswer,
+    day: session.currentDay, // <-- 3. SAVE USER RESPONSE DAY
     timestamp: new Date(),
     evaluation: evaluation ? {
       score: evaluation.score,
@@ -74,10 +75,12 @@ export async function updateSessionInDB(sessionId, userAnswer, nextQuestion, nex
       next: []
     };
   } else if (nextQuestion) {
-    session.currentDay = nextDay || session.currentDay;
+    const targetDay = nextDay || session.currentDay;
+    session.currentDay = targetDay;
     session.history.push({
       role: 'assistant',
       content: nextQuestion,
+      day: targetDay, // <-- 4. SAVE ASSISTANT NEXT QUESTION DAY
       timestamp: new Date(),
     });
   }
@@ -85,4 +88,4 @@ export async function updateSessionInDB(sessionId, userAnswer, nextQuestion, nex
   return await session.save();
 }
 
-export const InterviewSession = mongoose.model('InterviewSession', interviewSessionSchema);
+export const InterviewSession = mongoose.models.InterviewSession || mongoose.model('InterviewSession', interviewSessionSchema);

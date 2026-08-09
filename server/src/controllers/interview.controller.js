@@ -5,6 +5,7 @@ import {
 import { Candidate } from "../models/Candidate.js";
 import { InterviewSession } from "../models/InterviewSession.js";
 import { compileSessionFeedback } from "../services/interview/reportGenerator.js";
+import { processTurnUnified } from "../services/ai/gemini.service.js";
 import crypto from "crypto";
 
 export const handleInitialTurn = async (req, res, next) => {
@@ -15,20 +16,14 @@ export const handleInitialTurn = async (req, res, next) => {
     let profile = candidateProfile;
 
     if (!profile) {
-      let candidate = await Candidate.findOne({
-        candidateId: targetCandidateId,
-      });
+      let candidate = await Candidate.findOne({ candidateId: targetCandidateId });
 
       if (!candidate) {
         candidate = await Candidate.create({
           id: targetCandidateId,
           candidateId: targetCandidateId,
           name: "Mayank",
-          member: {
-            id: targetCandidateId,
-            name: "Mayank",
-            jobRole: "Software Engineer",
-          },
+          member: { id: targetCandidateId, name: "Mayank", jobRole: "Software Engineer" },
           missions: [],
         });
       }
@@ -42,8 +37,7 @@ export const handleInitialTurn = async (req, res, next) => {
     }
 
     const { question, day, state } = await startInterview(profile);
-    const sessionId =
-      req.body.sessionId || `sess_${crypto.randomBytes(8).toString("hex")}`;
+    const sessionId = req.body.sessionId || `sess_${crypto.randomBytes(8).toString("hex")}`;
 
     const sessionDoc = await InterviewSession.findOneAndUpdate(
       { sessionId },
@@ -57,11 +51,12 @@ export const handleInitialTurn = async (req, res, next) => {
           {
             role: "assistant",
             content: question,
+            day: day,
             timestamp: new Date(),
           },
         ],
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
 
     return res.status(200).json({
@@ -84,9 +79,7 @@ export const handleAnswerTurn = async (req, res, next) => {
     const userAnswer = message || answer;
 
     if (!sessionId || !userAnswer?.trim()) {
-      return res
-        .status(400)
-        .json({ error: "sessionId and message are required" });
+      return res.status(400).json({ error: "sessionId and message are required" });
     }
 
     const sessionDoc = await InterviewSession.findOne({ sessionId });
@@ -96,45 +89,39 @@ export const handleAnswerTurn = async (req, res, next) => {
     }
 
     if (sessionDoc.status === "completed") {
-      return res
-        .status(400)
-        .json({ error: "Session is already marked as completed." });
+      return res.status(400).json({ error: "Session is already marked as completed." });
     }
 
-    // 1. Reconstruct full conversation history
+    // 1. Reconstruct conversation history & unique covered days
     const conversationHistory = sessionDoc.history.map((h) => ({
       role: h.role === "user" ? "candidate" : "interviewer",
       content: h.content,
     }));
 
-    // 2. Extract previously covered days across history
     const extractedDays = Array.from(
       new Set([
-        sessionDoc.currentDay,
         ...sessionDoc.history
           .map((h) => Number(h.day))
-          .filter((d) => Number.isInteger(d)),
+          .filter((d) => Number.isInteger(d) && d > 0),
+        Number(sessionDoc.currentDay),
       ])
-    );
+    ).filter((d) => !isNaN(d) && d > 0);
 
-    // 3. Reconstruct complete state object for processAnswer
-    const state = {
-      candidateProfile: sessionDoc.candidate || {},
-      conversationHistory,
-      questionsAsked: sessionDoc.turnCount || 1,
-      daysCovered: extractedDays,
-      topicsCovered: [],
-      evaluations: sessionDoc.history
-        .filter((h) => h.evaluation && h.evaluation.score !== undefined)
-        .map((h) => h.evaluation),
-      currentQuestion: conversationHistory.slice(-1)[0]?.content || "",
-      currentCurriculum: [],
-      isComplete: false,
-    };
+    const currentQuestion = conversationHistory.slice(-1)[0]?.content || "";
+    const isLastTurn = sessionDoc.turnCount >= 8; // Max turns ceiling
+    const allowedNextDays = [8, 9, 10, 11, 12, 14, 20, 21, 22, 24, 30];
 
-    const result = await processAnswer(state, userAnswer.trim());
+    // 2. UNIFIED GEMINI API CALL (1 call per turn instead of 2)
+    const result = await processTurnUnified({
+      currentQuestion,
+      userAnswer: userAnswer.trim(),
+      currentDay: sessionDoc.currentDay,
+      allowedNextDays,
+      coveredDays: extractedDays,
+      isLastTurn,
+    });
 
-    // 4. Attach user response AND evaluation to user message entry
+    // 3. Record user response entry with active turn day & evaluation
     sessionDoc.history.push({
       role: "user",
       content: userAnswer.trim(),
@@ -143,23 +130,21 @@ export const handleAnswerTurn = async (req, res, next) => {
       evaluation: {
         score: result.evaluation?.score || 0,
         coveredObjectives: result.evaluation?.strengths || [],
-        notes: result.evaluation?.weaknesses?.[0] || "",
+        notes: result.evaluation?.gaps?.[0] || "",
       },
     });
 
-    sessionDoc.turnCount = result.state.questionsAsked;
+    sessionDoc.turnCount += 1;
 
-    // Handle completed session path
-    if (result.isComplete) {
+    // 4. Handle complete state path
+    if (isLastTurn) {
       sessionDoc.status = "completed";
-
       sessionDoc.history.push({
         role: "assistant",
         content: "Interview completed. Thank you!",
         timestamp: new Date(),
       });
 
-      // Extract evaluations for aggregated feedback report
       const allEvaluations = sessionDoc.history
         .filter((h) => h.evaluation && typeof h.evaluation.score === "number")
         .map((h) => ({
@@ -169,7 +154,7 @@ export const handleAnswerTurn = async (req, res, next) => {
           missingConcepts: [],
         }));
 
-      sessionDoc.feedback = compileSessionFeedback(allEvaluations);
+      sessionDoc.feedback = result.finalFeedback || compileSessionFeedback(allEvaluations);
       await sessionDoc.save();
 
       return res.status(200).json({
@@ -183,16 +168,19 @@ export const handleAnswerTurn = async (req, res, next) => {
       });
     }
 
-    // Update current day from latest state progression
-    const latestSelectedDay =
-      result.state.daysCovered.slice(-1)[0] || sessionDoc.currentDay;
-    sessionDoc.currentDay = latestSelectedDay;
+    // 5. Update next day & append assistant question entry
+    const nextQuestionObj = result.nextQuestion || {
+      question: "Can you elaborate on your solution's system design trade-offs?",
+      day: sessionDoc.currentDay + 1,
+    };
 
-    // Push next question into history
+    const nextDay = nextQuestionObj.day || sessionDoc.currentDay;
+    sessionDoc.currentDay = nextDay;
+
     sessionDoc.history.push({
       role: "assistant",
-      content: result.question,
-      day: latestSelectedDay,
+      content: nextQuestionObj.question,
+      day: nextDay,
       timestamp: new Date(),
     });
 
@@ -205,7 +193,7 @@ export const handleAnswerTurn = async (req, res, next) => {
       turn: sessionDoc.turnCount,
       role: "assistant",
       day: sessionDoc.currentDay,
-      content: result.question,
+      content: nextQuestionObj.question,
       evaluation: result.evaluation,
     });
   } catch (error) {

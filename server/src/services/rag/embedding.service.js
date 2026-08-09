@@ -29,12 +29,11 @@ const callWithRetry = async (fn, retries = 5, delayMs = 4000) => {
 };
 
 /**
- * Generates vector embeddings matching the 3072-dim curriculum index.
+ * Generates vector embeddings for curriculum documents and queries.
  * @param {string} text - Input query string.
  * @returns {Promise<number[]>} Vector array.
  */
 export async function generateEmbedding(text) {
-  // Mock mode fallback for quick offline test execution
   if (AI_MODE === 'mock' && !API_KEY) {
     return new Array(3072).fill(0.01);
   }

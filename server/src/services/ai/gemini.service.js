@@ -4,34 +4,241 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const API_KEY = process.env.GEMINI_API_KEY;
-const AI_MODE = process.env.AI_MODE || "real";
+const AI_MODE = (process.env.AI_MODE || "real").toLowerCase();
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
-console.log(`[Gemini Service] Mode: ${AI_MODE.toUpperCase()}`);
+console.log(`[Gemini Service] Mode: ${AI_MODE.toUpperCase()} | Model: ${MODEL_NAME}`);
 
 let mockQuestionCount = 0;
+const mockUsedDays = new Set();
+
+// ========================================
+// FIXED GLOBAL REQUEST THROTTLER
+// ========================================
+let lastCallTimestamp = 0;
+const MIN_INTERVAL_MS = 6000; // Safe threshold for 15 RPM limit
+
+async function enforceRequestPacing() {
+  const now = Date.now();
+  const elapsed = now - lastCallTimestamp;
+  if (elapsed < MIN_INTERVAL_MS) {
+    const delay = MIN_INTERVAL_MS - elapsed;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+
+function updatePacingTimestamp() {
+  lastCallTimestamp = Date.now();
+}
 
 /**
- * Exponential backoff wrapper for API calls hitting 429 / Quota limits.
+ * Exponential backoff wrapper with jitter for API calls.
  */
-const callWithRetry = async (fn, retries = 5, delayMs = 4000) => {
+export const callWithRetry = async (fn, retries = 3, delayMs = 5000) => {
   try {
-    return await fn();
+    await enforceRequestPacing();
+    const res = await fn();
+    updatePacingTimestamp(); // Update timestamp ONLY after API completes
+    return res;
   } catch (error) {
-    const errStr = String(error) + (error?.message || '');
-    const isQuotaError = 
-      error?.status === 429 || 
+    updatePacingTimestamp();
+    const errStr = String(error) + (error?.message || "");
+    const isQuotaError =
+      error?.status === 429 ||
       error?.statusCode === 429 ||
       /quota|429|resource_exhausted/i.test(errStr);
 
     if (isQuotaError && retries > 0) {
-      console.warn(`[Gemini API] Rate limit hit. Waiting ${delayMs / 1000}s before retrying (${retries} retries left)...`);
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      const jitter = Math.floor(Math.random() * 2000) + 1000;
+      const nextDelay = delayMs + jitter;
+
+      console.warn(
+        `[Gemini API] Rate limit hit (429). Retrying in ${(nextDelay / 1000).toFixed(1)}s (${retries} retries left)...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, nextDelay));
       return callWithRetry(fn, retries - 1, delayMs * 2);
     }
     throw error;
   }
 };
 
+// ========================================
+// UNIFIED TURN PROCESSOR
+// ========================================
+
+export async function processTurnUnified({
+  currentQuestion,
+  userAnswer,
+  currentDay,
+  allowedNextDays = [],
+  coveredDays = [],
+  isLastTurn = false,
+}) {
+  if (AI_MODE === "mock") {
+    return handleMockTurnUnified(currentDay, allowedNextDays, coveredDays, isLastTurn);
+  }
+
+  if (!API_KEY) {
+    throw new Error("GEMINI_API_KEY is missing from environment variables.");
+  }
+
+  const prompt = `
+You are an expert AI Technical Interviewer evaluating a software engineering candidate.
+Execute both evaluation and question selection in ONE response. Output valid JSON ONLY.
+
+### CURRENT TURN CONTEXT
+- Question Asked: "${currentQuestion}"
+- Candidate Answer: "${userAnswer}"
+- Current Topic Day: ${currentDay}
+
+### SELECTION CONTEXT
+- Available Days for Next Question: ${JSON.stringify(allowedNextDays)}
+- Days Already Covered: ${JSON.stringify(coveredDays)}
+- Is Final Turn: ${isLastTurn}
+
+### INSTRUCTIONS
+1. Evaluate the candidate's response (score 1-10, strengths, gaps).
+2. ${
+    isLastTurn
+      ? "Since this is the final turn, generate a compiled final assessment summary."
+      : "Select the best UNCOVERED day from 'Available Days' and formulate the next interview question."
+  }
+
+### REQUIRED JSON SCHEMA
+{
+  "evaluation": {
+    "score": number,
+    "strengths": [string],
+    "gaps": [string]
+  },
+  ${
+    isLastTurn
+      ? `"finalFeedback": {
+          "summary": string,
+          "strengths": [string],
+          "gaps": [string],
+          "next": [string]
+        }`
+      : `"nextQuestion": {
+          "question": string,
+          "day": number
+        }`
+  }
+}
+`;
+
+  try {
+    const rawResponse = await generateText(prompt, { expectJson: true });
+    const parsed = JSON.parse(rawResponse);
+    
+    // Normalize response in case raw string matched single-purpose legacy fallback
+    if (!parsed.evaluation) {
+      return handleMockTurnUnified(currentDay, allowedNextDays, coveredDays, isLastTurn);
+    }
+    return parsed;
+  } catch (error) {
+    console.error("[Gemini Service] Unified processing failed, serving safe mock structure:", error.message);
+    return handleMockTurnUnified(currentDay, allowedNextDays, coveredDays, isLastTurn);
+  }
+}
+
+function handleMockTurnUnified(currentDay, allowedNextDays, coveredDays, isLastTurn) {
+  const selectedDay =
+    allowedNextDays.find((d) => !coveredDays.includes(d)) || allowedNextDays[0] || 9;
+
+  return {
+    evaluation: {
+      score: 7,
+      strengths: ["Demonstrates solid foundational technical knowledge."],
+      gaps: ["Consider elaborating further on system production trade-offs."],
+    },
+    ...(isLastTurn
+      ? {
+          finalFeedback: {
+            summary: "Candidate successfully demonstrated standard system engineering competencies.",
+            strengths: ["Clean modular design focus", "Good architecture awareness"],
+            gaps: ["Deep-dive performance trade-offs under high load"],
+            next: ["Study distributed state consensus patterns"],
+          },
+        }
+      : {
+          nextQuestion: {
+            question: buildMockQuestion(selectedDay),
+            day: selectedDay,
+          },
+        }),
+  };
+}
+
+// ========================================
+// CORE GENERATION & EMBEDDINGS
+// ========================================
+
+export async function generateText(prompt, options = {}) {
+  if (AI_MODE === "mock") {
+    return handleMockGeneration(prompt);
+  }
+
+  if (!API_KEY) {
+    throw new Error("GEMINI_API_KEY is missing from environment variables.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+  const isJsonRequest =
+    options.expectJson ||
+    /json/i.test(prompt) ||
+    /return strictly valid json/i.test(prompt);
+
+  const config = isJsonRequest ? { responseMimeType: "application/json" } : {};
+
+  try {
+    return await callWithRetry(async () => {
+      const result = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config,
+      });
+      return result.text;
+    }, 2, 5000);
+  } catch (error) {
+    const isQuotaError =
+      error?.status === 429 ||
+      error?.statusCode === 429 ||
+      /quota|429|resource_exhausted/i.test(String(error));
+
+    if (isQuotaError) {
+      console.warn(
+        "\n[Gemini Service] Rate limit persisted. Serving unified mock fallback structure...\n"
+      );
+      return handleMockGeneration(prompt);
+    }
+    throw error;
+  }
+}
+
+export async function getEmbedding(text) {
+  if (AI_MODE === "mock") {
+    return new Array(768).fill(0.1);
+  }
+
+  if (!API_KEY) {
+    throw new Error("GEMINI_API_KEY is missing from environment variables.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+  return callWithRetry(async () => {
+    const response = await ai.models.embedContent({
+      model: "text-embedding-004",
+      contents: text,
+    });
+
+    return response.embedding.values;
+  });
+}
+
+// Mock fallback utility functions
 const mockQuestionBank = {
   8: "How would you design and populate a vector database for an AI application, and what factors would you consider when choosing the data to store?",
   9: "How would you design a retrieval pipeline that combines vector search with keyword search, and why might hybrid retrieval improve the quality of results?",
@@ -47,7 +254,9 @@ const mockQuestionBank = {
 };
 
 function extractAllowedDays(prompt) {
-  const match = prompt.match(/AVAILABLE CURRICULUM DAYS FOR THIS QUESTION:\s*(\[[^\]]*\])/is);
+  const match = prompt.match(
+    /(?:AVAILABLE CURRICULUM DAYS FOR THIS QUESTION|Available Days for selection|Available Days for Next Question):\s*(\[[^\]]*\])/is
+  );
   if (!match) return [];
   try {
     return JSON.parse(match[1]).map(Number).filter(Number.isInteger);
@@ -57,7 +266,9 @@ function extractAllowedDays(prompt) {
 }
 
 function extractCoveredDays(prompt) {
-  const match = prompt.match(/Curriculum days already covered:\s*(\[[^\]]*\])/is);
+  const match = prompt.match(
+    /(?:Curriculum days already covered|Days already covered):\s*(\[[^\]]*\])/is
+  );
   if (!match) return [];
   try {
     return JSON.parse(match[1]).map(Number).filter(Number.isInteger);
@@ -70,14 +281,19 @@ function chooseMockDay(prompt) {
   const allowedDays = extractAllowedDays(prompt);
   const coveredDays = extractCoveredDays(prompt);
 
-  // 1. Pick the first uncovered day among allowed days
-  const uncoveredDay = allowedDays.find((day) => !coveredDays.includes(day));
-  if (uncoveredDay !== undefined) return uncoveredDay;
+  let selectedDay = allowedDays.find((day) => !coveredDays.includes(day));
 
-  // 2. Otherwise pick the first allowed day
-  if (allowedDays.length > 0) return allowedDays[0];
+  if (selectedDay === undefined) {
+    const defaultPool = [8, 9, 10, 11, 12, 14, 20, 21, 22, 24, 30];
+    const poolRemaining = defaultPool.filter((day) => !mockUsedDays.has(day));
+    selectedDay =
+      poolRemaining.length > 0
+        ? poolRemaining[0]
+        : defaultPool[mockQuestionCount % defaultPool.length];
+  }
 
-  return 1;
+  mockUsedDays.add(selectedDay);
+  return selectedDay;
 }
 
 function buildMockQuestion(day) {
@@ -87,64 +303,60 @@ function buildMockQuestion(day) {
   );
 }
 
-export async function generateText(prompt) {
-  if (AI_MODE === "mock") {
-    const lowerPrompt = prompt.toLowerCase();
+function handleMockGeneration(prompt) {
+  const isUnifiedPrompt = /REQUIRED JSON SCHEMA/i.test(prompt) || /processTurnUnified/i.test(prompt);
 
-    const isFollowUpPrompt =
-      /generate\s+(a\s+)?follow[- ]up question/i.test(prompt) ||
-      /generate\s+one\s+follow[- ]up question/i.test(prompt);
+  if (isUnifiedPrompt) {
+    const allowedDays = extractAllowedDays(prompt);
+    const coveredDays = extractCoveredDays(prompt);
+    const isLastTurn = /Is Final Turn:\s*true/i.test(prompt);
+    const currentDay = allowedDays[0] || 8;
 
-    if (isFollowUpPrompt) {
-      const allowedDays = extractAllowedDays(prompt);
-      const followUpDay = allowedDays.length > 0 ? allowedDays[0] : 11;
-      return JSON.stringify({
-        question: "Can you explain how you would implement this approach in a real production system and what trade-offs you would consider?",
-        day: followUpDay
-      });
-    }
+    return JSON.stringify(handleMockTurnUnified(currentDay, allowedDays, coveredDays, isLastTurn));
+  }
 
-    const isEvaluationPrompt =
-      lowerPrompt.includes("analyze the candidate's answer") ||
-      lowerPrompt.includes("analyze candidate answer") ||
-      lowerPrompt.includes("evaluate the candidate's answer") ||
-      lowerPrompt.includes("evaluate candidate answer");
+  const lowerPrompt = prompt.toLowerCase();
+  const isFollowUpPrompt =
+    /generate\s+(a\s+)?follow[- ]up question/i.test(prompt) ||
+    /generate\s+one\s+follow[- ]up question/i.test(prompt);
 
-    if (isEvaluationPrompt) {
-      return JSON.stringify({
-        score: 7,
-        strengths: ["Demonstrates understanding of the core concept.", "Identifies an appropriate technical approach."],
-        weaknesses: ["Explanation could include more implementation details."],
-        missingConcepts: ["Evaluation methodology", "Production considerations"],
-        incorrectConcepts: [],
-        shouldAskFollowUp: false,
-        followUpReason: "The candidate demonstrated sufficient understanding for this question."
-      });
-    }
-
-    const selectedDay = chooseMockDay(prompt);
-    const question = buildMockQuestion(selectedDay);
-    mockQuestionCount++;
-
+  if (isFollowUpPrompt) {
+    const allowedDays = extractAllowedDays(prompt);
+    const followUpDay = allowedDays.length > 0 ? allowedDays[0] : 11;
     return JSON.stringify({
-      question,
-      day: selectedDay
+      question:
+        "Can you explain how you would implement this approach in a real production system and what trade-offs you would consider?",
+      day: followUpDay,
     });
   }
 
-  if (!API_KEY) {
-    throw new Error("GEMINI_API_KEY is missing from environment variables.");
+  const isEvaluationPrompt =
+    lowerPrompt.includes("analyze the candidate's answer") ||
+    lowerPrompt.includes("analyze candidate answer") ||
+    lowerPrompt.includes("evaluate the candidate's answer") ||
+    lowerPrompt.includes("evaluate candidate answer");
+
+  if (isEvaluationPrompt) {
+    return JSON.stringify({
+      score: 7,
+      strengths: [
+        "Demonstrates understanding of core architecture.",
+        "Identifies an appropriate technical approach.",
+      ],
+      weaknesses: ["Could include more specific edge-case handling."],
+      missingConcepts: ["Production monitoring", "Error handling"],
+      incorrectConcepts: [],
+      shouldAskFollowUp: false,
+      followUpReason: "The candidate demonstrated sufficient understanding.",
+    });
   }
 
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  const selectedDay = chooseMockDay(prompt);
+  const question = buildMockQuestion(selectedDay);
+  mockQuestionCount++;
 
-  // Execute call wrapped inside callWithRetry
-  return callWithRetry(async () => {
-    const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt
-    });
-
-    return result.text;
+  return JSON.stringify({
+    question,
+    day: selectedDay,
   });
 }

@@ -18,16 +18,37 @@ export const importCandidates = async (filePath) => {
 
     let count = 0;
     for (const cand of candidates) {
-      const candidateId = cand.member?.id || cand.id;
+      // 1. Resolve candidate ID from all possible candidate locations
+      const cid = cand.candidateId || cand.id || cand.member?.id;
 
-      if (!candidateId) {
+      if (!cid) {
         logger.warn({ cand }, 'Skipping candidate entry: missing ID');
         continue;
       }
 
+      // 2. Resolve candidate Name from root or member object
+      const cName = cand.name || cand.member?.name || `Candidate ${cid}`;
+
+      // 3. Construct a strictly validated payload matching candidateSchema
+      const formattedDoc = {
+        ...cand,
+        id: cid,                  // Ensures top-level unique 'id' is NOT null
+        candidateId: cid,         // Ensures top-level unique 'candidateId' is NOT null
+        name: cName,
+        member: {
+          id: cid,
+          name: cName,
+          jobRole: cand.member?.jobRole || cand.jobRole || 'Software Engineer',
+          yearsExperience: cand.member?.yearsExperience || 0,
+          education: cand.member?.education || '',
+          status: cand.member?.status || 'active'
+        }
+      };
+
+      // 4. Upsert using candidateId
       await Candidate.findOneAndUpdate(
-        { 'member.id': candidateId },
-        cand,
+        { candidateId: cid },
+        formattedDoc,
         { upsert: true, returnDocument: 'after' }
       );
       count++;
