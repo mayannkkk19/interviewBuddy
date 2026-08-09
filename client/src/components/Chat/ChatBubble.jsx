@@ -1,29 +1,43 @@
-const ChatBubble = ({ message, isAI }) => {
+import React from 'react';
+
+export default function ChatBubble({ role, content, day }) {
+  const isAssistant = role === 'assistant';
+
   return (
-    <div className={`flex ${isAI ? 'justify-start' : 'justify-end'} animate-slide-up`}>
-      <div className={`max-w-[80%] ${
-        isAI 
-          ? 'bg-gray-100 text-gray-900' 
-          : 'bg-primary-600 text-white'
-      } rounded-2xl px-4 py-3 shadow-sm`}>
-        {isAI && (
-          <div className="flex items-center space-x-2 mb-1">
-            <span className="text-xs font-medium text-gray-500">AI Interviewer</span>
-          </div>
-        )}
-        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-          {message.text}
-        </p>
-        {message.timestamp && (
-          <div className={`text-xs mt-1 ${
-            isAI ? 'text-gray-400' : 'text-primary-200'
-          }`}>
-            {new Date(message.timestamp).toLocaleTimeString()}
-          </div>
-        )}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: isAssistant ? 'flex-start' : 'flex-end',
+        margin: '0.75rem 0',
+      }}
+    >
+      {isAssistant && day && (
+        <span
+          style={{
+            fontSize: '0.75rem',
+            color: '#0070f3',
+            fontWeight: '600',
+            marginBottom: '0.25rem',
+          }}
+        >
+          Day {day} Focus
+        </span>
+      )}
+      <div
+        style={{
+          maxWidth: '75%',
+          padding: '0.85rem 1.1rem',
+          borderRadius: '12px',
+          background: isAssistant ? '#f0f4f8' : '#0070f3',
+          color: isAssistant ? '#1a1a1a' : '#ffffff',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          whiteSpace: 'pre-wrap',
+          lineHeight: '1.5',
+        }}
+      >
+        {content}
       </div>
     </div>
   );
-};
-
-export default ChatBubble;
+}

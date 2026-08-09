@@ -1,55 +1,90 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import { startInterview, sendAnswer } from '../services/interviewApi';
 
-export const InterviewContext = createContext();
+const InterviewContext = createContext();
 
 export const InterviewProvider = ({ children }) => {
   const [sessionId, setSessionId] = useState(null);
-  const [candidate, setCandidate] = useState(null);
+  const [candidateId, setCandidateId] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(8);
-  const [isLoading, setIsLoading] = useState(false);
+  const [turn, setTurn] = useState(0);
+  const [currentDay, setCurrentDay] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [feedback, setFeedback] = useState(null);
-  const [error, setError] = useState(null);
 
-  const resetInterview = () => {
-    setSessionId(null);
-    setCandidate(null);
-    setMessages([]);
-    setCurrentQuestion(0);
-    setTotalQuestions(8);
-    setIsLoading(false);
-    setIsCompleted(false);
-    setFeedback(null);
-    setError(null);
+  const initSession = async (selectedCandidateId) => {
+    setLoading(true);
+    setCandidateId(selectedCandidateId);
+    try {
+      const data = await startInterview(selectedCandidateId);
+      setSessionId(data.sessionId);
+      setTurn(data.turn || 1);
+      setCurrentDay(data.day || null);
+      setMessages([{ role: 'assistant', content: data.content, day: data.day }]);
+      setIsCompleted(false);
+      setFeedback(null);
+    } catch (error) {
+      console.error("Failed to start session:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const value = {
-    sessionId,
-    setSessionId,
-    candidate,
-    setCandidate,
-    messages,
-    setMessages,
-    currentQuestion,
-    setCurrentQuestion,
-    totalQuestions,
-    setTotalQuestions,
-    isLoading,
-    setIsLoading,
-    isCompleted,
-    setIsCompleted,
-    feedback,
-    setFeedback,
-    error,
-    setError,
-    resetInterview,
+  const submitAnswer = async (userMessage) => {
+    if (!sessionId || loading) return;
+
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setLoading(true);
+
+    try {
+      const data = await sendAnswer(sessionId, userMessage);
+      
+      setTurn(data.turn || turn + 1);
+      if (data.day) setCurrentDay(data.day);
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.content, day: data.day }]);
+
+      if (data.isComplete || data.status === 'completed') {
+        setIsCompleted(true);
+        setFeedback(data.feedback);
+      }
+    } catch (error) {
+      console.error("Failed to send answer:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetSession = () => {
+    setSessionId(null);
+    setCandidateId(null);
+    setMessages([]);
+    setTurn(0);
+    setCurrentDay(null);
+    setIsCompleted(false);
+    setFeedback(null);
   };
 
   return (
-    <InterviewContext.Provider value={value}>
+    <InterviewContext.Provider
+      value={{
+        sessionId,
+        candidateId,
+        messages,
+        turn,
+        currentDay,
+        loading,
+        isCompleted,
+        feedback,
+        initSession,
+        submitAnswer,
+        resetSession,
+      }}
+    >
       {children}
     </InterviewContext.Provider>
   );
 };
+
+export const useInterviewContext = () => useContext(InterviewContext);

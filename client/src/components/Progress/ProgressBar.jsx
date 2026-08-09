@@ -1,20 +1,24 @@
-const ProgressBar = ({ current, total }) => {
-  const percentage = total > 0 ? (current / total) * 100 : 0;
-  
+import React from 'react';
+
+export default function ProgressBar({ turn = 0, totalTurns = 8 }) {
+  const percentage = Math.min((turn / totalTurns) * 100, 100);
+
   return (
-    <div className="w-full">
-      <div className="flex justify-between text-sm text-gray-600 mb-1">
-        <span>Progress</span>
-        <span>{Math.round(percentage)}%</span>
+    <div style={{ marginTop: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+        <span>Interview Progress</span>
+        <span>Turn {turn} of {totalTurns}</span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+      <div style={{ width: '100%', height: '8px', background: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
         <div
-          className="bg-primary-600 h-2 rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${Math.min(percentage, 100)}%` }}
+          style={{
+            width: `${percentage}%`,
+            height: '100%',
+            background: '#0070f3',
+            transition: 'width 0.3s ease',
+          }}
         />
       </div>
     </div>
   );
-};
-
-export default ProgressBar;
+}

@@ -1,38 +1,23 @@
 import axios from 'axios';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
 });
 
-// Request interceptor
-api.interceptors.request.use(
-  (config) => {
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+export const fetchCandidates = async () => {
+  const { data } = await API.get('/candidates');
+  return data;
+};
 
-// Response interceptor
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    if (error.response) {
-      console.error('API Error:', error.response.status, error.response.data);
-    } else if (error.request) {
-      console.error('Network Error:', error.request);
-    } else {
-      console.error('Request Error:', error.message);
-    }
-    return Promise.reject(error);
-  }
-);
+export const startInterview = async (candidateId) => {
+  const { data } = await API.post('/interview/start', { candidateId });
+  return data;
+};
 
-export default api;
+export const sendAnswer = async (sessionId, message, engineState) => {
+  const { data } = await API.post('/interview/answer', { sessionId, message, engineState });
+  return data;
+};

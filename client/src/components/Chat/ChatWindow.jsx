@@ -1,37 +1,41 @@
+import React, { useState } from 'react';
+import { useInterviewContext } from '../../context/InterviewContext';
 import ChatBubble from './ChatBubble';
 import TypingIndicator from './TypingIndicator';
 
-const ChatWindow = ({ messages, isLoading, error }) => {
-  if (messages.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center text-gray-500">
-          <p className="text-lg">Interview will start soon</p>
-          <p className="text-sm">The AI interviewer will begin with the first question.</p>
-        </div>
-      </div>
-    );
-  }
+export default function ChatWindow() {
+  const { messages, submitAnswer, loading } = useInterviewContext();
+  const [input, setInput] = useState('');
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+    submitAnswer(input);
+    setInput('');
+  };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
-      {messages.map((message, index) => (
-        <ChatBubble
-          key={index}
-          message={message}
-          isAI={message.sender === 'ai'}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+        {messages.map((msg, idx) => (
+          <ChatBubble key={idx} role={msg.role} content={msg.content} day={msg.day} />
+        ))}
+        {loading && <TypingIndicator />}
+      </div>
+
+      <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.5rem', padding: '1rem', borderTop: '1px solid #eee' }}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your response..."
+          disabled={loading}
+          style={{ flex: 1, padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
         />
-      ))}
-      
-      {isLoading && <TypingIndicator />}
-      
-      {error && (
-        <div className="text-center text-red-600 text-sm p-3 bg-red-50 rounded-lg">
-          {error}
-        </div>
-      )}
+        <button type="submit" disabled={loading} style={{ padding: '0.75rem 1.5rem', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px' }}>
+          Send
+        </button>
+      </form>
     </div>
   );
-};
-
-export default ChatWindow;
+}
