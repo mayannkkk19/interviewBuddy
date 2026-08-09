@@ -28,6 +28,7 @@ const interviewSessionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+
 export async function createSessionInDB(sessionId, candidateProfile, initialQuestion, day) {
   return await InterviewSession.create({
     sessionId,
