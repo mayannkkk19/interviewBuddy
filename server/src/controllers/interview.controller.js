@@ -3,7 +3,7 @@ import {
   processAnswer,
 } from "../services/interview/interviewEngine.service.js";
 import { Candidate } from "../models/Candidate.js";
-import { InterviewSession } from "../models/InterviewSession.js";
+import { InterviewSession } from "../models/interviewSession.js";
 import { compileSessionFeedback } from "../services/interview/reportGenerator.js";
 import { processTurnUnified } from "../services/ai/gemini.service.js";
 import crypto from "crypto";
