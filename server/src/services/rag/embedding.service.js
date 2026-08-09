@@ -1,10 +1,14 @@
-import { GoogleGenAI } from '@google/genai';
-import dotenv from 'dotenv';
+import OpenAI from "openai";
+import dotenv from "dotenv";
 
 dotenv.config();
 
-const API_KEY = process.env.GEMINI_API_KEY;
-const AI_MODE = process.env.AI_MODE || 'real';
+const API_KEY = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY;
+const AI_MODE = (process.env.AI_MODE || "real").toLowerCase();
+
+const openai = new OpenAI({
+  apiKey: API_KEY || "dummy_key",
+});
 
 /**
  * Exponential backoff wrapper for API calls hitting 429 / Quota limits.
@@ -29,32 +33,32 @@ const callWithRetry = async (fn, retries = 5, delayMs = 4000) => {
 };
 
 /**
- * Generates vector embeddings for curriculum documents and queries.
+ * Generates vector embeddings for curriculum documents and queries using OpenAI.
  * @param {string} text - Input query string.
  * @returns {Promise<number[]>} Vector array.
  */
 export async function generateEmbedding(text) {
   if (AI_MODE === 'mock' && !API_KEY) {
-    return new Array(3072).fill(0.01);
+    return new Array(768).fill(0.01);
   }
 
   if (!API_KEY) {
-    throw new Error('GEMINI_API_KEY is missing from environment variables.');
+    throw new Error('OPENAI_API_KEY is missing from environment variables.');
   }
 
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
-  const modelName = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
+  const modelName = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small';
 
   return callWithRetry(async () => {
-    const response = await ai.models.embedContent({
+    const response = await openai.embeddings.create({
       model: modelName,
-      contents: text,
+      input: text,
+      dimensions: 768, // Forces OpenAI to output 768 dimensions to match your MongoDB database index
     });
 
-    const values = response?.embedding?.values || response?.embeddings?.[0]?.values;
+    const values = response?.data?.[0]?.embedding;
 
     if (!values) {
-      throw new Error(`[Embedding API] Could not parse vector values from response for model '${modelName}'.`);
+      throw new Error(`[Embedding API] Could not parse vector values from OpenAI response for model '${modelName}'.`);
     }
 
     return values;

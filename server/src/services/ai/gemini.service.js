@@ -1,66 +1,20 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = process.env.OPENAI_API_KEY;
 const AI_MODE = (process.env.AI_MODE || "real").toLowerCase();
-const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const MODEL_NAME = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
-console.log(`[Gemini Service] Mode: ${AI_MODE.toUpperCase()} | Model: ${MODEL_NAME}`);
+console.log(`[AI Service - OpenAI] Mode: ${AI_MODE.toUpperCase()} | Model: ${MODEL_NAME}`);
 
 let mockQuestionCount = 0;
 const mockUsedDays = new Set();
 
-// ========================================
-// FIXED GLOBAL REQUEST THROTTLER
-// ========================================
-let lastCallTimestamp = 0;
-const MIN_INTERVAL_MS = 6000; // Safe threshold for 15 RPM limit
-
-async function enforceRequestPacing() {
-  const now = Date.now();
-  const elapsed = now - lastCallTimestamp;
-  if (elapsed < MIN_INTERVAL_MS) {
-    const delay = MIN_INTERVAL_MS - elapsed;
-    await new Promise((resolve) => setTimeout(resolve, delay));
-  }
-}
-
-function updatePacingTimestamp() {
-  lastCallTimestamp = Date.now();
-}
-
-/**
- * Exponential backoff wrapper with jitter for API calls.
- */
-export const callWithRetry = async (fn, retries = 3, delayMs = 5000) => {
-  try {
-    await enforceRequestPacing();
-    const res = await fn();
-    updatePacingTimestamp(); // Update timestamp ONLY after API completes
-    return res;
-  } catch (error) {
-    updatePacingTimestamp();
-    const errStr = String(error) + (error?.message || "");
-    const isQuotaError =
-      error?.status === 429 ||
-      error?.statusCode === 429 ||
-      /quota|429|resource_exhausted/i.test(errStr);
-
-    if (isQuotaError && retries > 0) {
-      const jitter = Math.floor(Math.random() * 2000) + 1000;
-      const nextDelay = delayMs + jitter;
-
-      console.warn(
-        `[Gemini API] Rate limit hit (429). Retrying in ${(nextDelay / 1000).toFixed(1)}s (${retries} retries left)...`
-      );
-      await new Promise((resolve) => setTimeout(resolve, nextDelay));
-      return callWithRetry(fn, retries - 1, delayMs * 2);
-    }
-    throw error;
-  }
-};
+const openai = new OpenAI({
+  apiKey: API_KEY || "dummy_key",
+});
 
 // ========================================
 // UNIFIED TURN PROCESSOR
@@ -79,12 +33,12 @@ export async function processTurnUnified({
   }
 
   if (!API_KEY) {
-    throw new Error("GEMINI_API_KEY is missing from environment variables.");
+    throw new Error("OPENAI_API_KEY is missing from environment variables.");
   }
 
   const prompt = `
 You are an expert AI Technical Interviewer evaluating a software engineering candidate.
-Execute both evaluation and question selection in ONE response. Output valid JSON ONLY.
+You MUST respond strictly in valid JSON format. Do not include markdown codeblocks or extra text.
 
 ### CURRENT TURN CONTEXT
 - Question Asked: "${currentQuestion}"
@@ -97,31 +51,31 @@ Execute both evaluation and question selection in ONE response. Output valid JSO
 - Is Final Turn: ${isLastTurn}
 
 ### INSTRUCTIONS
-1. Evaluate the candidate's response (score 1-10, strengths, gaps).
+1. Evaluate the candidate's response (score 1-10, strengths, gaps). Adapt strictly to what they answered.
 2. ${
     isLastTurn
       ? "Since this is the final turn, generate a compiled final assessment summary."
-      : "Select the best UNCOVERED day from 'Available Days' and formulate the next interview question."
+      : "Select the best UNCOVERED day from 'Available Days' and formulate a brand new, tailored next technical question."
   }
 
 ### REQUIRED JSON SCHEMA
 {
   "evaluation": {
-    "score": number,
-    "strengths": [string],
-    "gaps": [string]
+    "score": 7,
+    "strengths": ["string"],
+    "gaps": ["string"]
   },
   ${
     isLastTurn
       ? `"finalFeedback": {
-          "summary": string,
-          "strengths": [string],
-          "gaps": [string],
-          "next": [string]
+          "summary": "string",
+          "strengths": ["string"],
+          "gaps": ["string"],
+          "next": ["string"]
         }`
       : `"nextQuestion": {
-          "question": string,
-          "day": number
+          "question": "string",
+          "day": 9
         }`
   }
 }
@@ -131,13 +85,13 @@ Execute both evaluation and question selection in ONE response. Output valid JSO
     const rawResponse = await generateText(prompt, { expectJson: true });
     const parsed = JSON.parse(rawResponse);
     
-    // Normalize response in case raw string matched single-purpose legacy fallback
     if (!parsed.evaluation) {
+      console.warn("[OpenAI Service] Missing evaluation field, falling back to mock structure.");
       return handleMockTurnUnified(currentDay, allowedNextDays, coveredDays, isLastTurn);
     }
     return parsed;
   } catch (error) {
-    console.error("[Gemini Service] Unified processing failed, serving safe mock structure:", error.message);
+    console.error("[OpenAI Service Error]:", error.message);
     return handleMockTurnUnified(currentDay, allowedNextDays, coveredDays, isLastTurn);
   }
 }
@@ -180,40 +134,27 @@ export async function generateText(prompt, options = {}) {
   }
 
   if (!API_KEY) {
-    throw new Error("GEMINI_API_KEY is missing from environment variables.");
+    throw new Error("OPENAI_API_KEY is missing from environment variables.");
   }
-
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
 
   const isJsonRequest =
     options.expectJson ||
     /json/i.test(prompt) ||
     /return strictly valid json/i.test(prompt);
 
-  const config = isJsonRequest ? { responseMimeType: "application/json" } : {};
-
   try {
-    return await callWithRetry(async () => {
-      const result = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: prompt,
-        config,
-      });
-      return result.text;
-    }, 2, 5000);
-  } catch (error) {
-    const isQuotaError =
-      error?.status === 429 ||
-      error?.statusCode === 429 ||
-      /quota|429|resource_exhausted/i.test(String(error));
+    const completion = await openai.chat.completions.create({
+      model: MODEL_NAME,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      ...(isJsonRequest ? { response_format: { type: "json_object" } } : {}),
+    });
 
-    if (isQuotaError) {
-      console.warn(
-        "\n[Gemini Service] Rate limit persisted. Serving unified mock fallback structure...\n"
-      );
-      return handleMockGeneration(prompt);
-    }
-    throw error;
+    return completion.choices[0].message.content;
+  } catch (error) {
+    console.error(`[OpenAI API Real Error]:`, error.status || error.code, error.message);
+    console.warn(`[OpenAI API] Falling back to mock data...`);
+    return handleMockGeneration(prompt);
   }
 }
 
@@ -223,22 +164,27 @@ export async function getEmbedding(text) {
   }
 
   if (!API_KEY) {
-    throw new Error("GEMINI_API_KEY is missing from environment variables.");
+    throw new Error("OPENAI_API_KEY is missing from environment variables.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
-
-  return callWithRetry(async () => {
-    const response = await ai.models.embedContent({
-      model: "text-embedding-004",
-      contents: text,
+  try {
+    const response = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+      dimensions: 768,
     });
 
-    return response.embedding.values;
-  });
+    return response.data[0].embedding;
+  } catch (error) {
+    console.error("[OpenAI Embedding Error]:", error.message);
+    return new Array(768).fill(0.1);
+  }
 }
 
-// Mock fallback utility functions
+// ========================================
+// MOCK FALLBACK UTILITIES
+// ========================================
+
 const mockQuestionBank = {
   8: "How would you design and populate a vector database for an AI application, and what factors would you consider when choosing the data to store?",
   9: "How would you design a retrieval pipeline that combines vector search with keyword search, and why might hybrid retrieval improve the quality of results?",

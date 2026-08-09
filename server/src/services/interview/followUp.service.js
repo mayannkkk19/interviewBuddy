@@ -34,10 +34,11 @@ Rules:
 8. Do not mention that you are an AI.
 9. Keep the question concise.
 
-Return ONLY the follow-up question.
+Return ONLY the follow-up question text as a plain string. Do not use JSON.
 `;
 
-  const followUpQuestion = await generateText(prompt);
+  // Explicitly pass expectJson: false so generateText treats it as plain text
+  const followUpQuestion = await generateText(prompt, { expectJson: false });
 
-  return followUpQuestion.trim();
+  return followUpQuestion.replace(/^["']|["']$/g, "").trim();
 }

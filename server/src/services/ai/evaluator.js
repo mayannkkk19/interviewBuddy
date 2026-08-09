@@ -37,7 +37,8 @@ Return ONLY valid JSON in this format:
 The score must be from 0 to 10.
 `;
 
-  const response = await generateText(prompt);
+// Pass expectJson: true so OpenAI uses response_format: { type: "json_object" }
+  const response = await generateText(prompt, { expectJson: true });
 
   try {
     const cleanedResponse = response

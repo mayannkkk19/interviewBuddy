@@ -152,7 +152,9 @@ async function generateNextQuestion(state) {
     .map((c) => `Day ${c.day}: ${c.title || c.topic || "General Topics"} - ${c.text || ""}`)
     .join("\n");
 
+  // 1. Define prompt first
   const prompt = `You are a technical interviewer. Generate ONE targeted interview question based on the provided curriculum material.
+Output your response strictly in valid JSON format.
 
 Curriculum Context:
 ${curriculumSummary}
@@ -160,13 +162,14 @@ ${curriculumSummary}
 Days already covered: ${JSON.stringify(state.daysCovered)}
 Available Days for selection: ${JSON.stringify(availableDays)}
 
-Return strictly valid JSON only:
+Return strictly valid JSON only matching this format:
 {
   "question": "Your technical interview question here",
   "day": ${availableDays[0] || 1}
 }`;
 
-  const response = await generateText(prompt);
+  // 2. Call generateText with expectJson option
+  const response = await generateText(prompt, { expectJson: true });
 
   let questionData;
   try {
