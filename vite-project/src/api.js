@@ -1,8 +1,7 @@
-// src/api.js
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 });
 
 export const fetchCandidates = async () => {
@@ -15,7 +14,7 @@ export const startInterview = async (candidateId) => {
   return res.data;
 };
 
-export const sendAnswer = async (sessionId, message) => {
-  const res = await API.post("/interview/answer", { sessionId, message });
+export const sendAnswer = async (sessionId, message, engineState) => {
+  const res = await API.post("/interview/answer", { sessionId, message, engineState });
   return res.data;
 };
