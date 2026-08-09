@@ -7,13 +7,10 @@ let server;
 
 const startServer = async () => {
   try {
-    // Ensure DB connection succeeds before accepting incoming traffic
-    await connectDB();
-
-    server = app.listen(env.PORT, () => {
+    // 1. Bind explicitly to '0.0.0.0' so Render can route external traffic
+    server = app.listen(env.PORT, '0.0.0.0', () => {
       logger.info(`Server running on port ${env.PORT} [${env.NODE_ENV}]`);
 
-      // Hackathon Judge Transparency Notice
       if (process.env.AI_MODE === 'mock') {
         console.log('\n---------------------------------------------------------');
         console.log('ℹ️  NOTE FOR HACKATHON JUDGES:');
@@ -23,8 +20,13 @@ const startServer = async () => {
         console.log('---------------------------------------------------------\n');
       }
     });
+
+    // 2. Connect to Database after starting the server
+    await connectDB();
+    logger.info('Database connected successfully');
+
   } catch (error) {
-    logger.error({ err: error.message }, 'Failed to start server');
+    logger.error({ err: error.message }, 'Failed during server startup sequence');
     process.exit(1);
   }
 };
@@ -33,13 +35,11 @@ const startServer = async () => {
 const shutdown = async (signal) => {
   logger.info(`${signal} received: starting graceful shutdown...`);
 
-  // Force process exit after 10 seconds if connections fail to close
   const forceExitTimeout = setTimeout(() => {
     logger.error('Forced shutdown: active connections took too long to close');
     process.exit(1);
   }, 10000);
 
-  // Unref timeout so it won't keep the event loop alive if cleanup succeeds early
   forceExitTimeout.unref();
 
   try {
